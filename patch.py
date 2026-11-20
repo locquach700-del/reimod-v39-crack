@@ -1,6 +1,17 @@
 import os, glob, sys, re
 
-print("[*] REIMOD V39 crack (fixed smali)")
+print("[*] REIMOD V39 crack")
+
+# ===== Fix manifest: remove unknown attributes =====
+mf = "green/AndroidManifest.xml"
+if os.path.isfile(mf):
+    with open(mf, encoding="utf-8", errors="ignore") as f:
+        m = f.read()
+    m2 = re.sub(r'\s*android:pageSizeCompat="[^"]*"', '', m)
+    m2 = re.sub(r'\s*android:[a-zA-Z0-9_]*Compat="[^"]*"', '', m2)
+    if m2 != m:
+        open(mf, "w", encoding="utf-8").write(m2)
+        print("[OK] stripped unknown manifest attrs")
 
 def replace_method(path, sig, body):
     with open(path) as f:
@@ -18,8 +29,7 @@ def replace_method(path, sig, body):
         f.write(c[:start] + body + c[end + len(".end method"):])
     return True
 
-# ===== 1. PanelLicense.validate -> always VALID =====
-# Reply.<init>(ILjava/lang/String;JLjava/lang/String;) needs /range (6 regs)
+# ===== PanelLicense.validate =====
 for pattern in ["green/smali*/**/PanelLicense.smali", "green/smali/**/PanelLicense.smali"]:
     for p in glob.glob(pattern, recursive=True):
         body = """.method static validate(Ljava/lang/String;Ljava/lang/String;Z)Lcom/reimod/v39/PanelLicense$Reply;
@@ -37,8 +47,7 @@ for pattern in ["green/smali*/**/PanelLicense.smali", "green/smali/**/PanelLicen
         if replace_method(p, ".method static validate(Ljava/lang/String;Ljava/lang/String;Z)Lcom/reimod/v39/PanelLicense$Reply;", body):
             print("[OK] PanelLicense.validate", p)
 
-# ===== 2. ApiLicense.authorize + fromDecision =====
-# Result.<init>(JJLjava/lang/String;IZ) = object + 2long + string + int + bool = 8 regs -> /range
+# ===== ApiLicense =====
 for pattern in ["green/smali*/**/ApiLicense.smali", "green/smali/**/ApiLicense.smali"]:
     for p in glob.glob(pattern, recursive=True):
         body = """.method public static authorize(Ljava/lang/String;Ljava/lang/String;)Lcom/killua/nexo/license/ApiLicense$Result;
@@ -79,7 +88,7 @@ for pattern in ["green/smali*/**/ApiLicense.smali", "green/smali/**/ApiLicense.s
         if replace_method(p, ".method public static fromDecision(Lcom/killua/nexo/license/ApiLicense$Decision;JJ)Lcom/killua/nexo/license/ApiLicense$Result;", body2):
             print("[OK] ApiLicense.fromDecision", p)
 
-# ===== 3. ProxyIntegrity =====
+# ===== ProxyIntegrity =====
 for pattern in ["green/smali*/**/ProxyIntegrity.smali", "green/smali/**/ProxyIntegrity.smali"]:
     for p in glob.glob(pattern, recursive=True):
         with open(p) as f:
